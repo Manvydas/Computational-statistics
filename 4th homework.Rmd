@@ -1,0 +1,201 @@
+---
+title: "4th homework"
+author: "Manvydas Sokolovas, p3170190"
+date: "11/30/2017"
+output:
+  pdf_document:
+    latex_engine: xelatex
+    number_section: yes
+    toc_depth: 2
+  html_document: default
+---
+
+```{r, include=FALSE}
+library(car)
+library(knitr)
+library(boot)
+
+balt <- read.csv("balt.csv"); balt <- balt[,-1]
+```
+
+# 1st regression summary
+```{r, echo = FALSE}
+model1 <- lm(PRICE ~ NROOM + NBATH + PATIO + FIREPL + AC, data = balt)
+kable(summary(model1)$coef)
+kable(data.frame(summary(model1)[8]))
+```
+
+## Bootstrap for the first regression
+```{r, echo = FALSE}
+bootfun <- function(data, index) {
+  coef(lm(PRICE ~ NROOM + NBATH + PATIO + FIREPL + AC, data = balt, subset = index))
+}
+
+b1<-boot(balt, bootfun, 10000)
+b1
+```
+
+## Bootstrap for $R^2$ confidence intervals
+```{r, echo = FALSE}
+R2 <- boot(balt,function(data,indices)
+        summary(lm(PRICE ~ NROOM + NBATH + PATIO + FIREPL + AC, data[indices,]))$r.squared, R = 10000)
+
+R2
+quantile(R2$t,c(0.025,0.975))
+```
+
+# Confidence intervals of the first regression estimates
+```{r, echo = FALSE}
+conf<-data.frame()
+for(i in 1:6){
+  for(l in 1:2){
+   conf[i,l] <- round(quantile(b1$t[,i],c(0.025,0.975))[l],3)
+  }
+}
+colnames(conf) <- c("2.5%", "97.5%")
+rownames(conf) <- names(model1$coefficients)
+kable(conf)
+```
+
+# 2nd regression summary
+```{r, echo = FALSE}
+mod2 <- lm(PRICE ~ NROOM + NBATH + PATIO + AC, data = balt)
+kable(summary(mod2)$coef)
+kable(data.frame(summary(mod2)[8]))
+```
+
+## Bootstrap for the second regression
+```{r, echo = FALSE}
+bootfun2 <- function(data, index) {
+  coef(lm(PRICE ~ NROOM + NBATH + PATIO + AC, data = balt, subset = index))
+}
+
+b2<-boot(balt, bootfun2, 10000)
+b2
+```
+
+## Bootstrap to get $R^2$ confidence interval
+```{r, echo = FALSE}
+R22 <- boot(balt,function(data,indices)
+        summary(lm(PRICE ~ NROOM + NBATH + PATIO + AC, data[indices,]))$r.squared, R = 10000)
+
+R22
+quantile(R22$t,c(0.025,0.975))
+```
+
+##
+```{r, echo = FALSE}
+box <- data.frame(R2$t, R22$t)
+colnames(box) = c("model1","model2")
+boxplot(box)  
+a <- kable(data.frame(summary(model1)[8])) # R^2 firts model
+b <- kable(data.frame(summary(mod2)[8])) # R^2 second model
+```
+
+* In the second model ${R}^2$ is smaller
+
+* ${R}^2$ confidence intervals from both models are overlapping, but not a lot.
+
+* Standart errors in the second model got bigger. Thus, assuming all those statements I would prefer the first model.
+
+## Confidence intervals of second model estimates
+```{r, echo = FALSE}
+conf2<-data.frame()
+for(i in 1:5){
+  for(l in 1:2){
+   conf2[i,l] <- round(quantile(b2$t[,i],c(0.025,0.975))[l],3)
+  }
+}
+colnames(conf2) <- c("2.5%", "97.5%")
+rownames(conf2) <- names(mod2$coefficients)
+kable(conf2)
+```
+
+# Better models by R-square
+
+```{r, message = FALSE, echo = FALSE}
+panel.hist <- function(x, ...)    #ši funkcija reikalinga grafikų lentelei išbrėžti (histogramos pateikimui)                        
+{
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(usr[1:2], 0, 1.5) )
+  h <- hist(x, plot = FALSE)
+  breaks <- h$breaks; nB <- length(breaks)
+  y <- h$counts; y <- y/max(y)
+  rect(breaks[-nB], 0, breaks[-1], y, col = "cyan", ...)
+}
+
+panel.cor2 <- function(x, y, digits=2, cex.cor)
+{
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- abs(cor(x, y))
+  txt <- format(c(r, 0.123456789), digits=digits)[1]
+  test <- cor.test(x,y)
+  Signif <- ifelse(round(test$p.value,3)<0.001,"p<0.001",paste("p=",round(test$p.value,3)))  
+  text(0.5, 0.25, paste("r=",txt))
+  text(.5, .75, Signif)
+}
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor,...)    #ši funkcija reikalinga grafikų lentelei
+  #išbrėžti (koreliacijos koeficiento radimui)
+{
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- abs(cor(x, y))
+  txt <- format(c(r, 0.123456789), digits = digits)[1]
+  txt <- paste0(prefix, txt)
+  if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+  text(0.5, 0.5, txt, cex = 3)
+}
+```
+
+```{r, include = FALSE, echo = FALSE}
+pairs(balt,upper.panel=panel.smooth,diag.panel=panel.hist, lower.panel=panel.cor2)
+print(cor(balt), digits = 2)
+```
+
+*mod1* = ${PRICE} = {\beta}_0 + {NROOM} {\beta}_1 + {NBATH} {\beta}_2 + {PATIO} {\beta}_3 + {FIREPL} {\beta}_4 + {AC} {\beta}_5$
+
+*mod2* = ${PRICE} = {\beta}_0 + {NROOM} {\beta}_1 + {NBATH} {\beta}_2 + {PATIO} {\beta}_3 + {AC} {\beta}_4$
+
+*mod3* =  ${PRICE} = {\beta}_0 + {NBATH} {\beta}_1 + {PATIO} {\beta}_2 + {FIREPL} {\beta}_3 + {SQFT} {\beta}_4$
+
+*mod4* =  ${PRICE} = {\beta}_0 + {PATIO} {\beta}_1 + {FIREPL} {\beta}_2 + {AC} {\beta}_3 + {BMENT} {\beta}_4 + {GAR} {\beta}_5 + {AGE} {\beta}_6 + {SQFT} {\beta}_7$
+
+*mod5* =  ${PRICE} = {\beta}_0 + {NROOM} {\beta}_1 + {NBATH} {\beta}_2 + {PATIO} {\beta}_3 + {FIREPL} {\beta}_4 + {AC} {\beta}_5 + {GAR} {\beta}_6 + {AGE} {\beta}_7 + {SQFT} {\beta}_8$
+
+*mod6* =  ${PRICE} = {\beta}_0 + {NBATH} {\beta}_1 + {PATIO} {\beta}_2 + {FIREPL} {\beta}_3 + {AC} {\beta}_4 + {GAR} {\beta}_5 + {AGE} {\beta}_6 + {SQFT} {\beta}_7$
+
+*mod_all* =  ${PRICE} = {\beta}_0 + {NROOM} {\beta}_1 + {NBATH} {\beta}_2 + {PATIO} {\beta}_3 + {FIREPL} {\beta}_4 + {AC} {\beta}_5 + {BMENT} {\beta}_6 + {NSTOR} {\beta}_7 + {GAR} {\beta}_8 + {AGE} {\beta}_9 + {SQFT} {\beta}_10$
+
+
+NROOM + NBATH + PATIO + FIREPL + AC + BMENT + NSTOR + GAR + AGE + SQFT
+
+```{r, echo = FALSE}
+mod1 <- boot(balt,function(data,indices)
+        summary(lm(PRICE ~ NROOM + NBATH + PATIO + FIREPL + AC, data[indices,]))$r.squared, R = 3000)
+
+mod2 <- boot(balt,function(data,indices)
+        summary(lm(PRICE ~ NROOM + NBATH + PATIO + AC, data[indices,]))$r.squared, R = 3000)
+
+mod3 <- boot(balt,function(data,indices)
+        summary(lm(PRICE ~ NBATH + PATIO + FIREPL + SQFT, data[indices,]))$r.squared, R = 3000)
+
+mod4 <- boot(balt,function(data,indices)
+        summary(lm(PRICE ~ PATIO + FIREPL + AC + BMENT + GAR + AGE + SQFT, data[indices,]))$r.squared, R = 3000)
+
+mod5 <- boot(balt,function(data,indices)
+        summary(lm(PRICE ~ NROOM + NBATH + PATIO + FIREPL + AC + GAR + AGE + SQFT, data[indices,]))$r.squared, R = 3000)
+
+mod6 <- boot(balt,function(data,indices)
+        summary(lm(PRICE ~ NBATH + PATIO + FIREPL + AC + GAR + AGE + SQFT, data[indices,]))$r.squared, R = 3000)
+
+mod_all <- boot(balt,function(data,indices)
+        summary(lm(PRICE ~ NROOM + NBATH + PATIO + FIREPL + AC + BMENT + NSTOR + GAR + AGE + SQFT, data[indices,]))$r.squared, R = 3000)
+
+rr <- data.frame(mod1$t, mod2$t, mod3$t, mod4$t, mod5$t, mod6$t, mod_all$t)
+colnames(rr) <- c("mod1", "mod2", "mod3", "mod4", "mod5", "mod6", "mod_all")
+
+boxplot(rr)
+```
+
+* $mod5$ ${R}^2$ confidence interval is just a bit higher than $mod6$. But $mod5$ have one more variable. Thus, that could happen because ${R}^2$ gets bigger when you add variables.

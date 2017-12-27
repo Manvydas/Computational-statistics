@@ -1,0 +1,60 @@
+---
+title: "2nd homework"
+author: "Manvydas Sokolovas, p3170190"
+date: "10/29/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+```
+
+##1st part
+
+```{r}
+xseq<-seq(-4, 4, .01)
+densities<-dnorm(xseq, 0,1)
+plot(xseq, densities, col="blue",xlab="", ylab="Density", type="l", main="Standard Normal", cex.axis=.8, lwd=2)
+lines(xseq, 1.6*dlogis(xseq), lwd=2, col="green")
+
+x1 <- rlogis(1000); y1 <- runif(1000, 0, 1.6*dlogis(x1))
+points(x1,y1, col="green")
+norm <- y1 <= dnorm(x1)
+points(x1,y1, col=3+norm)
+mean(norm)
+```
+
+##2nd part
+
+*Unit square divided into 100 pieces. Droped n random points:*
+```{r}
+plot(c(0,1),c(0,1), type = "n", xlab = "", ylab = "", main = "1x1 square")
+
+rect(0, 0, 1, 1, border = "red")
+
+l <- seq(0.1, 0.9, by = 0.1)
+for(i in l) {
+            lines(c(i,i),c(0,1))
+            lines(c(0,1),c(i,i))
+            }
+n <- 1000 # number of random points
+x1 = round(runif(n, 0, 1),4); y1 = round(runif(n, 0, 1),4)
+mtrx <- matrix(c(x1,y1), ncol=2)
+points(mtrx, col = "blue")
+```
+
+*Number of points in each small square:*
+```{r}
+k <- seq(0, 1, by = 0.1)
+interv <- data.frame(x = findInterval(mtrx[,1], k),
+                    y = findInterval(mtrx[,2], k))
+table(interv)
+```
+
+*Points distribution in small squares and Poisson distribution with lambda=6:*
+```{r}
+par(mfrow=c(1, 2))
+table(group_size(group_by(interv,x,y)))
+barplot(table(group_size(group_by(interv,x,y))), cex.names = 0.9, xlab = "Points in square", ylab = "Frequency", cex.lab=1.2, main = "Points sum")
+barplot(table(rpois(n,6)))
+```

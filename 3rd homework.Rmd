@@ -1,0 +1,71 @@
+---
+title: "3rd homework"
+author: "Manvydas Sokolovas, p3170190"
+date: "11/5/2017"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r, include=FALSE}
+library(animation)
+library(randtoolbox)
+```
+
+##1. Find the value:
+```{r}
+fx <- function(x) {sqrt(1-x)}
+integrate(fx, lower = 0, upper = 1)
+```
+
+##2. Hit and Miss:
+```{r}
+curve(fx)
+n <- 1000
+x1 <- runif(n, 0, 1); y1 <- runif(n, 0, 1)
+behind <- y1 <= {sqrt(1-x1)}
+points(x1, y1, col = 3+behind)
+mean(behind)
+var(behind)
+```
+
+```{r, include = F}
+#Second method to do Hit and Miss:
+MC.hitormiss(FUN = fx, n = ani.options("nmax"), from = 0, to = 1, col.points = c("black", "red"), pch.points = c(20, 4))$est
+```
+
+##3. ${\phi} {\rightarrow} f$:
+```{r}
+x<-runif(1000)
+mean(sqrt(1-x))
+```
+
+##4. Importance Sampling:
+```{r}
+## I miss the weight function. Thus, I chose it by myself.
+
+w <- function(x) dunif(x, 0, 1)/ dbeta(x, 0.7, 1)
+f <- function(x) {sqrt(1-x)}
+X <- rbeta(1000, 0.7, 1)
+Y <- w(X)*f(X)
+Y <- Y[!is.na(Y)]
+mean(Y)
+var(Y)
+```
+
+##5. Halton:
+```{r}
+curve(fx)
+a <- halton(100, dim = 2, usetime = F)
+under <- a[,2] <= {sqrt(1 - a[, 1])}
+points(a, col = 2+under)
+mean(under)
+var(under)
+```
+
+##Monte Carlo:
+```{r}
+nsim <- 10000
+u <- runif(nsim)
+sum(fx(u))/ nsim
+```

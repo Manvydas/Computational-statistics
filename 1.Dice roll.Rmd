@@ -1,0 +1,78 @@
+---
+title: "Dice roll"
+author: "Manvydas Sokolovas, p3170190"
+date: "10/17/2017"
+output: html_document
+---
+
+# Rich:
+```{r}
+roll <- function()
+  {
+  current.sum <- 6  # rich person starts with 6 dollars
+  while (0 < current.sum && current.sum < 8) # gambling till balance is 0 or 8
+    {
+    eyes <- sample(6, size=1, replace=TRUE) # number of eyes on die
+    current.sum <-
+      {
+      if(eyes>4){current.sum+1}else{current.sum-1} # rich wins when die shows 5 or 6 otherwise loose
+      }
+    }
+  balance <- if(current.sum == 8){1}else{0}
+  print(balance)
+  }
+```
+```{r, results="hide"}
+sim <- replicate(1000, roll())
+```
+```{r}
+mean(sim) # probability to win
+```
+
+# Regular:
+```{r}
+roll <- function()
+  {
+  current.sum <- 4
+  while (0 < current.sum && current.sum < 8)
+    {
+    eyes <- sample(6, size=1, replace=TRUE)
+    current.sum <-
+      {
+      if(eyes>3){current.sum+1}else{current.sum-1}
+      }
+    }
+  balance <- if(current.sum == 8){1}else{0}
+  print(balance)
+  }
+```
+```{r, results="hide"}
+sim <- replicate(1000, roll())
+```
+```{r}
+mean(sim)
+```
+
+# Lucky:
+```{r}
+roll <- function()
+  {
+  current.sum <- 2
+  while (0 < current.sum && current.sum < 8)
+    {
+    eyes <- sample(6, size=1, replace=TRUE)
+    current.sum <-
+      {
+      if(eyes>2){current.sum+1}else{current.sum-1}
+      }
+    }
+  balance <- if(current.sum == 8){1}else{0}
+  print(balance)
+  }
+```
+```{r, results="hide"}
+sim <- replicate(1000, roll())
+```
+```{r}
+mean(sim)
+```
